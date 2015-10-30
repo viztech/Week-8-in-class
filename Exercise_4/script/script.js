@@ -21,7 +21,7 @@ var scaleX = d3.time.scale().domain([startDate, endDate]).range([0,width]),
 
 //line generator
 var line = d3.svg.line()
-    .x(function(d){return scaleX(d.key)})
+    .x(function(d){return scaleX(d.date)})
     .y(function(d){return scaleY(d.avgFare)})
     .interpolate('basis')
 var area = d3.svg.area()
@@ -65,8 +65,36 @@ queue()
 
 function dataLoaded(err,data,metadata){
 
+    //console.log(data);
+
+    //data --> 1840 elements, all flights, all travel dates, all airlines
+    var nestedData = d3.nest()
+        .key(function(d){return d.travelDate})
+        .entries(data);
+
+    //calculate average fare for each travel date
+    nestedData.forEach(function(t){
+        console.log(t.key);
+
+        t.date = new Date(t.key);
+        t.avgFare = d3.mean(t.values, function(flight){return flight.price});
+
+        console.log("average fare for " + t.key + 'is '+ t.averageFare);
+
+    });
+
+    nestedData.sort(function(a,b){
+        return b.date - a.date;
+    })
+
+    plot.append('path').attr('class','data-line')
+        .datum(nestedData)
+        .attr('d',line);
+
+    console.log(nestedData);
+
     //Do the easy stuff first
-    plot.selectAll('flight')
+    plot.selectAll('.flight')
         .data(data)
         .enter()
         .append('circle').attr('class','flight')

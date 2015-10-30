@@ -56,16 +56,71 @@ queue()
 
 function dataLoaded(err,coffee,tea){
 
+    //This runs only once
+    plot.append('path')
+        .attr('class','data-line');
 
     d3.selectAll('.btn').on('click',function(){
        var type = d3.select(this).attr('id');
 
-       //if(type=='coffee')
+       if(type=='coffee'){
+           draw(coffee);
+       }else{
+           draw(tea);
+       }
     });
 }
 
-function draw(){
+function draw( dataArray ){
+    //dataArray --> can be either coffee or tea depending on user input
+    //This will run a million times
 
+    plot.select('.data-line')
+        .datum(dataArray)
+        .transition()
+        .duration(500)
+        .attr('d',lineGenerator);
+
+    var dots = plot.selectAll('.data-point')
+        .data(dataArray);
+    var dotsEnter = dots.enter()
+        .append('circle')
+        .attr('class','data-point')
+        .attr('r',10)
+        .on('mouseenter', function(d){
+
+            var tooltip = d3.select('.custom-tooltip');
+
+            tooltip.transition().style('opacity',1);
+
+            tooltip.select('#type').html(d.item);
+            tooltip.select('#year').html(d.year);
+            tooltip.select('#value').html(d.value);
+
+        })
+        .on('mouseleave',function(d){
+            d3.select('.custom-tooltip').transition()
+                .style('opacity',0);
+        })
+        .on('mousemove',function(d){
+            //This finds the xy of the mouse in relation to #plot
+            var xy = d3.mouse(document.getElementById('plot'));
+
+            var left = xy[0], top = xy[1];
+
+
+            d3.select('.custom-tooltip')
+                .style('left', left + 50 + 'px')
+                .style('top', top +50 + 'px')
+            //happens frequently
+        })
+        //.call(attachTooltip);
+    dots.exit().transition().remove();
+    dots
+        .transition()
+        .duration(500)
+        .attr('cx',function(d){return scaleX(d.year)})
+        .attr('cy',function(d){return scaleY(d.value)});
 }
 
 function parse(d){
